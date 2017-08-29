@@ -26,10 +26,14 @@ def window_transform_series(series, window_size):
 def prepare_data(train):
     X_total = np.array([], dtype=np.int64).reshape(0, window_size)
     y_total = np.array([], dtype=np.int64).reshape(0, 1)
+    i=0
     for index, row in train.iloc[:, 1:-1].iterrows():
+        i += 1
         X, y = window_transform_series(row, window_size)
         X_total = np.concatenate((X_total, X))
         y_total = np.concatenate((y_total, y))
+        if (i % 1000):
+            print(str(i) + ' data sequences processed on one processor ')
     return X_total, y_total
 
 def parallelization(train):
