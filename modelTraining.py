@@ -5,6 +5,9 @@ from keras.models import Sequential
 from keras.layers import Dense
 from keras.layers import LSTM
 from keras.optimizers import RMSprop
+import multiprocessing
+
+window_size = 60
 
 def window_transform_series(series, window_size):
     # containers for input/output pairs
@@ -20,7 +23,7 @@ def window_transform_series(series, window_size):
     y.shape = (len(y),1)
     return X,y
 
-def prepare_data(train, window_size):
+def prepare_data(train):
     X_total = np.array([], dtype=np.int64).reshape(0, window_size)
     y_total = np.array([], dtype=np.int64).reshape(0, 1)
     for index, row in train.iloc[:, 1:-1].iterrows():
@@ -29,15 +32,25 @@ def prepare_data(train, window_size):
         y_total = np.concatenate((y_total, y))
     return X_total, y_total
 
+def parallelization(train):
+    # create as many processes as there are CPUs on your machine
+    num_processes = multiprocessing.cpu_count()
+    print("Number of processes: " + str(num_processes))
+    # calculate the chunk size as an integer
+    chunk_size = int(train.shape[0] / num_processes)
+    chunks = [train.ix[train.index[i:i + chunk_size]] for i in range(0, train.shape[0], chunk_size)]
+    pool = multiprocessing.Pool(processes=num_processes)
+    return pool.map(prepare_data, chunks)
+
 if __name__ == "__main__":
     print("Started data loading")
-    train = dd.read_csv('train_1_clustered.csv').fillna(0)
-    window_size = 60
+    train = pd.read_csv('train_1_clustered.csv').fillna(0)
+    print(train.columns)
     grouped_train = train.groupby('cluster')
     for cluster, data in grouped_train:
         #cluster_ch = np.char.mod('%d', cluster)
         print("Started data preparation for cluster " + str(cluster))
-        X, y = prepare_data(data, window_size)
+        X, y = parallelization(data)
 
         # input must be reshaped to [samples, window size, stepsize]
         X = np.asarray(np.reshape(X, (X.shape[0], window_size, 1)))
