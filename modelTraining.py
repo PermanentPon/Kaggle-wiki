@@ -1,4 +1,5 @@
 import pandas as pd
+import dask.dataframe as dd
 import numpy as np
 from keras.models import Sequential
 from keras.layers import Dense
@@ -22,9 +23,7 @@ def window_transform_series(series, window_size):
 def prepare_data(train, window_size):
     X_total = np.array([], dtype=np.int64).reshape(0, window_size)
     y_total = np.array([], dtype=np.int64).reshape(0, 1)
-    i = 0
     for index, row in train.iloc[:, 1:-1].iterrows():
-        i += 1
         X, y = window_transform_series(row, window_size)
         X_total = np.concatenate((X_total, X))
         y_total = np.concatenate((y_total, y))
@@ -32,7 +31,7 @@ def prepare_data(train, window_size):
 
 if __name__ == "__main__":
     print("Started data loading")
-    train = pd.read_csv('train_1_clustered.csv').fillna(0)
+    train = dd.read_csv('train_1_clustered.csv').fillna(0)
     window_size = 60
     grouped_train = train.groupby('cluster')
     for cluster, data in grouped_train:
@@ -43,6 +42,11 @@ if __name__ == "__main__":
         # input must be reshaped to [samples, window size, stepsize]
         X = np.asarray(np.reshape(X, (X.shape[0], window_size, 1)))
         print("Finished data preparation for cluster " + str(cluster))
+
+        prep_data = dd.DataFrame(X)
+        prep_data[len(y)] = y
+
+        prep_data.to_csv('Prep_data_' + str(cluster) + '.csv')
 
         model = Sequential()
         model.add(LSTM(128, input_shape=(window_size, 1)))
