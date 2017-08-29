@@ -32,7 +32,7 @@ def prepare_data(train):
         X, y = window_transform_series(row, window_size)
         X_total = np.concatenate((X_total, X))
         y_total = np.concatenate((y_total, y))
-        if (i % 1000):
+        if (i % 1000 == 0):
             print(str(i) + ' data sequences processed on one processor ')
     return X_total, y_total
 
