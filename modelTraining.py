@@ -10,28 +10,23 @@ import time
 
 window_size = 60
 
-def window_transform_series(series, window_size):
+def window_transform_series(series):
     # containers for input/output pairs
-    X = []
-    y = []
+    X = np.array([], dtype=np.int64).reshape(0, window_size)
+    y = np.array([], dtype=np.int64).reshape(0, 1)
     for i in range(0, len(series) - window_size):
-        X.append(series[i:i + window_size])
-        y.append(series[i + window_size:i + window_size + 1])
-    # reshape each
-    X = np.asarray(X)
-    X.shape = (np.shape(X)[0:2])
-    y = np.asarray(y)
-    y.shape = (len(y),1)
-    return X,y
+        X = np.vstack((X, series[i:i + window_size]))
+        y = np.vstack((y, series[i + window_size:i + window_size + 1]))
+    return X, y
 
 def prepare_data(train):
     X_total = np.array([], dtype=np.int64).reshape(0, window_size)
     y_total = np.array([], dtype=np.int64).reshape(0, 1)
-    i=0
+    i = 0
     start = time.time()
-    for index, row in train.iloc[:, 1:-1].iterrows():
+    for index, row in train.iloc[:, :].iterrows():
         i += 1
-        X, y = window_transform_series(row, window_size)
+        X, y = window_transform_series(row)
         X_total = np.concatenate((X_total, X))
         y_total = np.concatenate((y_total, y))
         if (i % 1000 == 0):
