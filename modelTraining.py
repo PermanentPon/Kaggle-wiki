@@ -1,5 +1,4 @@
 import pandas as pd
-import dask.dataframe as dd
 import numpy as np
 from keras.models import Sequential
 from keras.layers import Dense
@@ -24,7 +23,7 @@ def prepare_data(train):
     y_total = np.array([], dtype=np.int64).reshape(0, 1)
     i = 0
     start = time.time()
-    for index, row in train.iloc[:, :].iterrows():
+    for index, row in train.iterrows():
         i += 1
         X, y = window_transform_series(row)
         X_total = np.concatenate((X_total, X))
@@ -42,24 +41,29 @@ def parallelization(train):
     chunk_size = int(train.shape[0] / num_processes)
     chunks = [train.ix[train.index[i:i + chunk_size]] for i in range(0, train.shape[0], chunk_size)]
     pool = multiprocessing.Pool(processes=num_processes)
-    return pool.map(prepare_data, chunks)
+    tt = pool.map(prepare_data, chunks)
+    pool.close()
+    pool.join()
+    t = list(zip(*tt))
+    X = np.vstack(t[0])
+    y = np.vstack(t[1])
+    return X, y
 
 if __name__ == "__main__":
     print("Started data loading")
     train = pd.read_csv('train_1_clustered.csv').fillna(0)
-    print(train.columns)
     grouped_train = train.groupby('cluster')
     for cluster, data in grouped_train:
         #cluster_ch = np.char.mod('%d', cluster)
         print("Started data preparation for cluster " + str(cluster))
-        X, y = parallelization(data)
+        X, y = parallelization(data.iloc[:,2:-1])
 
         # input must be reshaped to [samples, window size, stepsize]
         X = np.asarray(np.reshape(X, (X.shape[0], window_size, 1)))
         print("Finished data preparation for cluster " + str(cluster))
 
-        prep_data = dd.DataFrame(X)
-        prep_data[len(y)] = y
+        prep_data = pd.DataFrame(np.squeeze(X))
+        prep_data[window_size] = np.squeeze(y)
 
         prep_data.to_csv('Prep_data_' + str(cluster) + '.csv')
 
