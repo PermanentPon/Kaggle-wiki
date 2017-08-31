@@ -65,7 +65,7 @@ if __name__ == "__main__":
         prep_data = pd.DataFrame(np.squeeze(X))
         prep_data[window_size] = np.squeeze(y)
 
-        prep_data.to_csv('Prep_data_' + str(cluster) + '.csv')
+        prep_data.to_csv('./Data/Prep_data_' + str(cluster) + '.csv')
 
         model = Sequential()
         model.add(LSTM(128, input_shape=(window_size, 1)))
