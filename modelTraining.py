@@ -51,7 +51,7 @@ def parallelization(train):
 
 if __name__ == "__main__":
     print("Started data loading")
-    train = pd.read_csv('train_1_clustered.csv').fillna(0)
+    train = pd.read_csv('train_1_clustered.csv', nrows = 100).fillna(0)
     grouped_train = train.groupby('cluster')
     for cluster, data in grouped_train:
         #cluster_ch = np.char.mod('%d', cluster)
@@ -65,10 +65,10 @@ if __name__ == "__main__":
         prep_data = pd.DataFrame(np.squeeze(X))
         prep_data[window_size] = np.squeeze(y)
 
-        prep_data.to_csv('./Data/Prep_data_' + str(cluster) + '.csv')
+        prep_data.to_csv('./data/prep_data_' + str(cluster) + '.csv')
 
         model = Sequential()
-        model.add(LSTM(128, input_shape=(window_size, 1)))
+        model.add(LSTM(2, input_shape=(window_size, 1)))
         model.add(Dense(1))
 
         # build model using keras documentation recommended optimizer initialization
@@ -77,7 +77,7 @@ if __name__ == "__main__":
         # compile the model
         model.compile(loss='mean_absolute_error', optimizer=optimizer)
         print("Started fitting model for cluster " + str(cluster))
-        model.fit(X, y, epochs=100, batch_size=50, verbose=1)
+        model.fit(X, y, epochs=1, batch_size=50, verbose=1)
         print("Finished fitting model for cluster " + str(cluster))
-        model.save('./Models/wiki_model_LSTM_1:128/model_' + str(cluster) + ".h5")
+        model.save('./models/wiki_model_LSTM_1_128/model_' + str(cluster) + ".h5")
         print("Saved model " + './Models/wiki_model_LSTM_1_128/model_' + str(cluster) + ".h5")
